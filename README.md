@@ -75,3 +75,5 @@ npm run dev # run the frontend app
 - Assumed interventions wouldn't be needed to filter the trials. But adding it as a query gave better results.
 - Assumed the trials API would only return trials if there was a strong match. But it returned the specified number of trials for most cases.
 - Assumed the LLM model would be expensive. But it cheaper than expected (used gpt-4o).
+
+  
