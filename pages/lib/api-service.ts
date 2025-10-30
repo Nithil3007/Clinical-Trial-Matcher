@@ -1,5 +1,5 @@
 // api service for backend 
-const API_BASE_URL = "http://localhost:8007";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8007';
 
 export interface PatientData {
   patient_name: string;
