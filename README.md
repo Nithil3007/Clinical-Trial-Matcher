@@ -57,6 +57,7 @@ Use patient-clinician transcriptions to get relevant clinical trials
 ## Deployment 
 
 - Project link - **https://main.d3e5zy64vh32y7.amplifyapp.com/**
+- Demo (contains video and the transcript used) - **https://drive.google.com/drive/folders/1Q_9fjp6nO9ixj0nV8EU0Akkh3ULRshJp?usp=drive_link**
 - AWS App Runner to deploy the backend API
 - AWS S3 to store the patient data
 - AWS Amplify for the frontend
