@@ -12,9 +12,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from llm_service import extract_patient_data, rank_trials, ask_ai
-from trial_service import get_params, relevant_trials, trials_long
-from storage import save_data, load_data, delete_data, list_keys, get_storage_info
+from .llm_service import extract_patient_data, rank_trials, ask_ai
+from .trial_service import get_params, relevant_trials, trials_long
+from .storage import save_data, load_data, delete_data, list_keys
 
 # Configure logging (container-friendly - no file logging)
 logging.basicConfig(
