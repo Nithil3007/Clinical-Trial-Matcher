@@ -7,7 +7,7 @@ import uvicorn
 import re
 from datetime import datetime
 from openai import OpenAI
-from typing import List, Dict, Optional
+from typing import List, Dict
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -136,38 +136,31 @@ async def healthcheck():
 @app.post("/api/v1/transcripts", status_code=201)
 async def upload_transcript(request: TranscriptUploadRequest) -> ClinicalNotesResponse:
     try:
-        # Generate unique ID for this clinical note
         clinical_notes_id = str(uuid.uuid4())
         timestamp = datetime.utcnow().isoformat()
-        
         logger.info(f"Processing transcript {clinical_notes_id}")
         
-        # Step 1: Extract patient data from transcript using LLM
-        llm_output = extract_patient_data(
+        patient_summary = extract_patient_data(
             client, model, clinical_notes_prompt, request.transcript, temperature, max_tokens
         )
         logger.info(f"LLM extraction completed for {clinical_notes_id}")
         
-        # Parse LLM output
-        llm_output = re.sub(r'^```json|```$', '', llm_output)
-        patient_data_dict = json.loads(llm_output)
+        patient_summary = re.sub(r'^```json|```$', '', patient_summary)
+        patient_data_dict = json.loads(patient_summary)
         logger.info(f"Parsed LLM output for {clinical_notes_id}")
         
         patient_data = PatientData(**patient_data_dict)
-        
-        # Step 2: Get relevant trials based on extracted patient data
-        params = get_params(llm_output)
+        params = get_params(patient_summary)
         trials_list = relevant_trials(base_url, params)
         logger.info(f"Found {len(trials_list)} trials for {clinical_notes_id}")
         
-        # Step 3: Store results for later retrieval
         save_data(f'notes/{clinical_notes_id}.json', {
             "patient_data": patient_data.dict(),
             "trials": trials_list,
             "created_at": timestamp,
-            "llm_output": llm_output
+            "patient_summary": patient_summary
         })
-        
+
         logger.info(f"Clinical notes {clinical_notes_id} stored successfully")
         
         return ClinicalNotesResponse(
@@ -192,7 +185,6 @@ async def get_clinical_notes(clinical_notes_id: str) -> ClinicalNotesResponse:
     if not note:
         logger.warning(f"Clinical notes {clinical_notes_id} not found")
         raise HTTPException(status_code=404, detail="Clinical notes not found")
-    
     return ClinicalNotesResponse(
         clinical_notes_id=clinical_notes_id,
         patient_data=PatientData(**note["patient_data"]),
@@ -208,7 +200,6 @@ async def get_trials_for_notes(clinical_notes_id: str) -> TrialDataList:
     if not note:
         logger.warning(f"Trials for clinical notes {clinical_notes_id} not found")
         raise HTTPException(status_code=404, detail="Trials not found for this clinical note")
-    
     trials = note["trials"]
     logger.info(f"Trials: {trials}")
     return TrialDataList(trials=trials)
@@ -220,32 +211,20 @@ async def get_trial_ranking(clinical_notes_id: str) -> TrialRankingList:
     if not note:
         logger.warning(f"Clinical notes {clinical_notes_id} not found")
         raise HTTPException(status_code=404, detail="Clinical notes not found")
-    
     try:
-        # Get trials and LLM output
         trials_list = note["trials"]
-        llm_output = note["llm_output"]
-        
+        patient_summary = note["patient_summary"]
         logger.info(f"Ranking {len(trials_list)} trials for {clinical_notes_id}")
-        
-        # Call AI ranking function
         ranking_json = rank_trials(
-            client, model, ranking_prompt, trials_list, llm_output, temperature, max_tokens
+            client, model, ranking_prompt, trials_list, patient_summary, temperature, max_tokens
         )
-        
         logger.info(f"AI ranking response: {ranking_json}")
-        
-        # Parse JSON response - clean markdown code blocks if present
         cleaned_json = ranking_json.strip()
         if cleaned_json.startswith('```'):
-            # Remove markdown code blocks
             cleaned_json = re.sub(r'^```(?:json)?\s*\n?', '', cleaned_json)
             cleaned_json = re.sub(r'\n?```\s*$', '', cleaned_json)
-        
         logger.info(f"Cleaned JSON: {cleaned_json}")
         ranking_data = json.loads(cleaned_json)
-        
-        # Convert to list of TrialRanking objects
         ranked_trials = []
         for nct_id, data in ranking_data.items():
             ranked_trials.append({
@@ -253,10 +232,8 @@ async def get_trial_ranking(clinical_notes_id: str) -> TrialRankingList:
                 "explanation": data[0] if isinstance(data, list) and len(data) > 0 else "No explanation",
                 "relevance_score": int(data[1]) if isinstance(data, list) and len(data) > 1 else 0
             })
-        
         logger.info(f"Ranked {len(ranked_trials)} trials")
         return TrialRankingList(trials=ranked_trials)
-        
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse AI ranking response: {e}")
         logger.error(f"Raw response was: {ranking_json[:500]}")
@@ -278,7 +255,6 @@ async def get_saved_trials() -> Dict[str, List[Dict]]:
         trial_data = load_data(key)
         if trial_data:
             trials_list.append(trial_data)
-    
     logger.info(f"Returning {len(trials_list)} saved trials")
     return {
         "trials": trials_list
@@ -288,14 +264,9 @@ async def get_saved_trials() -> Dict[str, List[Dict]]:
 @app.post("/api/v1/trials/{nct_id}/save")
 async def save_trial(nct_id: str) -> Dict[str, str]:
     try:
-        # Get trial details
         trial = trials_long(base_url, nct_id)
-        
-        # Save to storage
         save_data(f'saved-trials/{nct_id}.json', trial)
-        
         logger.info(f"Saved trial {nct_id}")
-        
         return {
             "message": "Trial saved successfully",
             "nct_id": nct_id
@@ -311,10 +282,8 @@ async def remove_saved_trial(nct_id: str) -> Dict[str, str]:
     if not trial_data:
         logger.warning(f"Trial {nct_id} not found in saved trials")
         raise HTTPException(status_code=404, detail="Trial not found in saved trials")
-    
     delete_data(f'saved-trials/{nct_id}.json')
     logger.info(f"Removed trial {nct_id} from saved trials")
-    
     return {
         "message": "Trial removed successfully",
         "nct_id": nct_id
@@ -337,36 +306,27 @@ async def get_trial_details(nct_id: str) -> TrialDataLong:
 @app.post("/api/v1/trials/ask_ai")
 async def ask_ai_about_trial(request: AskAIRequest) -> Dict[str, str]:
     try:
-        # Validate that clinical notes exist
         note = load_data(f'notes/{request.clinical_notes_id}.json')
         if not note:
             raise HTTPException(status_code=404, detail="Clinical notes not found")
-        
-        # Get trial details
+
         trial_details = trials_long(base_url, request.nct_id)
-        
-        # Get patient summary
-        llm_output = note["llm_output"]
-        
-        # Convert trial details to JSON string for context
+        patient_summary = note["patient_summary"]
         trial_input = json.dumps(trial_details, indent=2)
-        
         logger.info(f"Asking AI about trial {request.nct_id}: {request.query}")
-        
-        # Call AI to answer the question
-        answer = ask_ai(
+
+        ai_response = ask_ai(
             client, model, ask_ai_prompt, request.query, 
-            llm_output, trial_input, temperature, max_tokens
+            patient_summary, trial_input, temperature, max_tokens
         )
-        
-        logger.info(f"AI response: {answer}")
-        
+        logger.info(f"AI response: {ai_response}")
+
         return {
             "nct_id": request.nct_id,
             "query": request.query,
-            "answer": answer
+            "answer": ai_response
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:

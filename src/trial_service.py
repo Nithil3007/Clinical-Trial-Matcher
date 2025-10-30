@@ -2,78 +2,55 @@
 import requests
 import json
 
-# ClinicalTrials.gov API Service
-# This module provides three functions to interact with the ClinicalTrials.gov API:
-# 1. get_params() - Extract search parameters from LLM output
-# 2. relevant_trials() - Fetch list of relevant trials (table view)
-# 3. short_trials() - Fetch detailed trial information (cascade view)
-
 def get_params(llm_output: str) -> dict:
     try:
         data = json.loads(llm_output)
         conditions = data.get('conditions', [])
-        interventions = data.get('interventions', [])
-        
         conditions_str = ' OR '.join(conditions) if conditions else ''
+        interventions = data.get('interventions', [])
         interventions_str = ' OR '.join(interventions) if interventions else ''
-        
         params = {
             "query.cond": conditions_str,
             "query.intr": interventions_str,
             "pageSize": 30,
         }
-        
         return params
-        
     except json.JSONDecodeError as e:
         print(f"Error parsing LLM output: {e}")
-        
     except Exception as e:
         print(f"Unexpected error in get_params: {e}")
 
-
-def relevant_trials(base_url: str, params: dict, max_pages: int = 10) -> list:
+def relevant_trials(base_url: str, params: dict, pages: int = 10) -> list:
     trials = []
-    page_count = 0
-    
+    i = 0
     try:
-        while page_count < max_pages:
+        while i < pages:
             response = requests.get(base_url, params=params, timeout=10)
             response.raise_for_status()
-            
             data = response.json()
             studies = data.get('studies', [])
-            
             for study in studies:
                 protocol = study.get('protocolSection', {})
-                
                 nct_id = protocol.get('identificationModule', {}).get('nctId', 'Unknown')
-                
                 conditions_list = protocol.get('conditionsModule', {}).get('conditions', [])
                 conditions = ', '.join(conditions_list[:4]) if conditions_list else 'No conditions listed'
-                
-                interventions_raw = protocol.get('armsInterventionsModule', {}).get('interventions', [])
-                interventions_list = [inv.get('name', 'Unknown') for inv in interventions_raw[:4]]
-                interventions = ', '.join(interventions_list) if interventions_list else 'No interventions listed'
-                
+                interventions_list = protocol.get('armsInterventionsModule', {}).get('interventions', [])
+                interventions_names = [inv.get('name', 'Unknown') for inv in interventions_list[:4]]
+                interventions = ', '.join(interventions_names) if interventions_names else 'No interventions listed'
                 trials.append({
                     "nct_id": nct_id,
                     "conditions": conditions,
                     "interventions": interventions
                 })
-            
             next_page_token = data.get('nextPageToken')
             if not next_page_token:
                 break
-                
             params['pageToken'] = next_page_token
-            page_count += 1
-            
+            i += 1
     except requests.exceptions.RequestException as e:
         print(f"Error fetching trials: {e}")
     except Exception as e:
         print(f"Unexpected error in relevant_trials: {e}")
-    
     return trials[:40]
 
 def trials_long(base_url: str, nct_id: str) -> dict:
@@ -114,7 +91,7 @@ def trials_long(base_url: str, nct_id: str) -> dict:
         nct_id_result = id_module.get("nctId", nct_id)
         acronym = id_module.get("acronym", "Unknown")
         title = id_module.get("briefTitle", "Unknown")
-        
+
         status_module = protocol.get("statusModule", {})
         status = status_module.get("overallStatus", "Unknown")
         primary_completion_date = status_module.get("primaryCompletionDateStruct", {}).get("date", "Unknown")
