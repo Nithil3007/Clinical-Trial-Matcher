@@ -7,7 +7,6 @@ import uvicorn
 import re
 from datetime import datetime
 from openai import OpenAI
-from utils import read_text_file
 from typing import List, Dict, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -112,13 +111,16 @@ class AskAIRequest(BaseModel):
     query: str
 
 #initialize llm and api clients
+def read_text_file(file_path):
+    with open(file_path, 'r',encoding="utf8") as file:
+        file_content = file.read()
+    return file_content
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 model = "gpt-4o"
-clinical_notes_prompt = read_text_file("prompts/new_prompt.txt")
+clinical_notes_prompt = read_text_file("prompts/clinical_notes_prompt.txt")
 ranking_prompt = read_text_file("prompts/ranking_prompt.txt")
 ask_ai_prompt = read_text_file("prompts/ask_ai_prompt.txt")
-
-#transcript = input from user
 temperature = 0.2
 max_tokens = 10000
 base_url = "https://clinicaltrials.gov/api/v2/studies"
