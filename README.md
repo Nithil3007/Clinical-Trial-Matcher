@@ -73,6 +73,7 @@ OPENAI_API_KEY=your_openai_api_key
 
 #### Backend: 
 ```bash
+\\ commands to be run within the directory
 \\ create virtual environment
 python -m venv venv 
 
