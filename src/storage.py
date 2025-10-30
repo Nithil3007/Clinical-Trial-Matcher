@@ -43,9 +43,7 @@ def save_data(key: str, data: dict) -> bool:
                 return True
             except Exception as s3_error:
                 logger.error(f"S3 error saving {key}: {s3_error}")
-                logger.warning(f"Falling back to memory storage for {key}")
                 _memory_storage[key] = data
-                logger.debug(f"Saved to memory: {key}")
                 return True
         else:
             _memory_storage[key] = data
@@ -65,20 +63,16 @@ def load_data(key: str) -> Optional[dict]:
                 return data
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchKey':
-                    logger.debug(f"Key not found in S3: {key}")
+                    logger.debug(f"Key not found: {key}")
                     # Try memory storage as fallback
                     data = _memory_storage.get(key)
-                    if data:
-                        logger.debug(f"Found in memory storage: {key}")
                     return data
                 else:
-                    logger.error(f"S3 error loading {key}: {e}")
-                    logger.warning(f"Falling back to memory storage for {key}")
+                    logger.error(f"Error loading data from {key}: {e}")
                     data = _memory_storage.get(key)
                     return data
             except Exception as s3_error:
-                logger.error(f"S3 error loading {key}: {s3_error}")
-                logger.warning(f"Falling back to memory storage for {key}")
+                logger.error(f"Error loading data from {key}: {s3_error}")
                 data = _memory_storage.get(key)
                 return data
         else:
@@ -97,11 +91,9 @@ def delete_data(key: str) -> bool:
                 logger.info(f"Deleted from S3: {key}")
                 return True
             except Exception as s3_error:
-                logger.error(f"S3 error deleting {key}: {s3_error}")
-                logger.warning(f"Falling back to memory storage for {key}")
+                logger.error(f"Error deleting data from {key}: {s3_error}")
                 if key in _memory_storage:
                     del _memory_storage[key]
-                    logger.debug(f"Deleted from memory: {key}")
                 return True
         else:
             if key in _memory_storage:
@@ -121,10 +113,8 @@ def list_keys(prefix: str) -> List[str]:
                 logger.debug(f"Listed {len(keys)} keys from S3 with prefix: {prefix}")
                 return keys
             except Exception as s3_error:
-                logger.error(f"S3 error listing keys with prefix {prefix}: {s3_error}")
-                logger.warning(f"Falling back to memory storage for listing")
+                logger.error(f"Error listing keys with prefix {prefix}: {s3_error}")
                 keys = [k for k in _memory_storage.keys() if k.startswith(prefix)]
-                logger.debug(f"Listed {len(keys)} keys from memory with prefix: {prefix}")
                 return keys
         else:
             keys = [k for k in _memory_storage.keys() if k.startswith(prefix)]
