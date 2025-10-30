@@ -8,7 +8,6 @@ import json
 # 2. relevant_trials() - Fetch list of relevant trials (table view)
 # 3. short_trials() - Fetch detailed trial information (cascade view)
 
-
 def get_params(llm_output: str) -> dict:
     try:
         data = json.loads(llm_output)
@@ -33,44 +32,49 @@ def get_params(llm_output: str) -> dict:
         print(f"Unexpected error in get_params: {e}")
 
 
-def relevant_trials(base_url: str, params: dict) -> list:
-    i = 0
-    data_list = []
-    while i <= 30:
-        i+=1
-        response = requests.get(base_url, params=params)
-        if response.status_code == 200:
+def relevant_trials(base_url: str, params: dict, max_pages: int = 10) -> list:
+    trials = []
+    page_count = 0
+    
+    try:
+        while page_count < max_pages:
+            response = requests.get(base_url, params=params, timeout=10)
+            response.raise_for_status()
+            
             data = response.json()
             studies = data.get('studies', [])
+            
             for study in studies:
                 protocol = study.get('protocolSection', {})
-                identification = protocol.get('identificationModule', {})
-
-                nct_id = identification.get('nctId', 'Unknown')
-                conditions_module = protocol.get('conditionsModule', {})
-                conditions_list = conditions_module.get('conditions', ['No conditions listed'])
-                conditions_list = conditions_list[:4]
-                conditions = ', '.join(conditions_list) if isinstance(conditions_list, list) else str(conditions_list)
-                interventions_module = protocol.get('armsInterventionsModule', {})
-                interventions_raw = interventions_module.get('interventions', [])
-                interventions_raw = interventions_raw[:4]
-                interventions_list = [
-                    inv.get('name', 'Unknown') if isinstance(inv, dict) else str(inv) 
-                    for inv in interventions_raw
-                ] if interventions_raw else ['No interventions listed']
-                interventions = ', '.join(interventions_list)
-                data_list.append({
+                
+                nct_id = protocol.get('identificationModule', {}).get('nctId', 'Unknown')
+                
+                conditions_list = protocol.get('conditionsModule', {}).get('conditions', [])
+                conditions = ', '.join(conditions_list[:4]) if conditions_list else 'No conditions listed'
+                
+                interventions_raw = protocol.get('armsInterventionsModule', {}).get('interventions', [])
+                interventions_list = [inv.get('name', 'Unknown') for inv in interventions_raw[:4]]
+                interventions = ', '.join(interventions_list) if interventions_list else 'No interventions listed'
+                
+                trials.append({
                     "nct_id": nct_id,
                     "conditions": conditions,
                     "interventions": interventions
                 })
             
-            nextPageToken = data.get('nextPageToken')
-            if nextPageToken:
-                params['nextPageToken'] = nextPageToken
-            else:
+            next_page_token = data.get('nextPageToken')
+            if not next_page_token:
                 break
-    return data_list
+                
+            params['pageToken'] = next_page_token
+            page_count += 1
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching trials: {e}")
+    except Exception as e:
+        print(f"Unexpected error in relevant_trials: {e}")
+    
+    return trials[:40]
 
 def trials_long(base_url: str, nct_id: str) -> dict:
     try:
@@ -190,24 +194,4 @@ def trials_long(base_url: str, nct_id: str) -> dict:
             "sex": "Unknown",
             "phases": "Unknown",
             "eligibility_criteria": "Error fetching data"
-        }
-    except (KeyError, IndexError, TypeError) as e:
-        print(f"Error parsing trial data for NCT ID {nct_id}: {e}")
-        return {
-            "nct_id": nct_id,
-            "acronym": "Parse Error",
-            "title": "Error parsing data",
-            "primary_completion_date": "Unknown",
-            "study_first_post_date": "Unknown",
-            "last_update_post_date": "Unknown",
-            "study_type": "Unknown",
-            "status": "Error",
-            "sponsor": "Error",
-            "conditions": "Error parsing data",
-            "interventions": "Error parsing data",
-            "locations": "Error parsing data",
-            "age": "Unknown",
-            "sex": "Unknown",
-            "phases": "Unknown",
-            "eligibility_criteria": "Error parsing data"
         }
