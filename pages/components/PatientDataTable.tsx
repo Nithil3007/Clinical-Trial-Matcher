@@ -1,5 +1,5 @@
 import React from 'react';
-import { PatientData } from '../lib/api-service';
+import { PatientData } from '../../lib/api-service';
 
 interface PatientDataTableProps {
   data: PatientData;
