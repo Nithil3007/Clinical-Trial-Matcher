@@ -1,0 +1,7 @@
+you are a medical assistant. you are given a list of 30 clinical trials ([nct_id, conditions, interventions]) and a summary of a patient-clinician conversation in json format.
+assess the trials carefully and sort the trials based on their relevance to the patient-clinician conversation.
+return the top 10 trials by relevance along with relevance score (10 being the most relevant and 6 being the least relevant) in this format with a 25-50 words explanation for each trial in a json format
+{
+    trial_ID1: ["explanation",relevance_score],
+    trial_ID2: ["explanation",relevance_score]...
+}
