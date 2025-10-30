@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import FileUpload from './_components/FileUpload';
-import PatientDataTable from './_components/PatientDataTable';
-import TrialsTable from './_components/TrialsTable';
-import SavedTrialsSidebar from './_components/SavedTrialsSidebar';
+import FileUpload from '../components/FileUpload';
+import PatientDataTable from '../components/PatientDataTable';
+import TrialsTable from '../components/TrialsTable';
+import SavedTrialsSidebar from '../components/SavedTrialsSidebar';
 import { uploadTranscript, ClinicalNotesResponse, getSavedTrials } from '../lib/api-service';
 
 export default function Home() {
