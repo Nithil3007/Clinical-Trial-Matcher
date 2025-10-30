@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrialDetails, getSavedTrials } from '../lib/api-service';
+import { TrialDetails, getSavedTrials } from '../../lib/api-service';
 
 interface SavedTrialsSidebarProps {
   isOpen: boolean;
