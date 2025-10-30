@@ -3,7 +3,7 @@ import FileUpload from './components/FileUpload';
 import PatientDataTable from './components/PatientDataTable';
 import TrialsTable from './components/TrialsTable';
 import SavedTrialsSidebar from './components/SavedTrialsSidebar';
-import { uploadTranscript, ClinicalNotesResponse, getSavedTrials } from './lib/api-service';
+import { uploadTranscript, ClinicalNotesResponse, getSavedTrials } from '../lib/api-service';
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
