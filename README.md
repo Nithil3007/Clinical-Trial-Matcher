@@ -41,7 +41,7 @@ Use patient-clinician transcriptions to get relevant clinical trials
 - Frontend: React, TypeScript, TailwindCSS
 ### Backend
 - Started with implementing the **text extraction** function.
-- Extracted the conditions and treatment parameters from the transcript. The clinical trial API uses a semantic search method to retrieve the relevant trials. I had to figure out a way to extract the trials with the most relevance. Used AND and OR operators with **condition** and **intervention** queries to get the required URLs for the API. Completed the **get_params()** function. Spent more time coming up with the logic than writing the functions in the trial_service.py script. AI was helpful in extracting values from the trial json data.
+- Extracted the conditions and treatment parameters from the transcript. The clinical trial API uses a semantic search method to retrieve the relevant trials. I had to figure out a way to extract the trials with the most relevance. Used AND and OR operators with **condition** and **intervention** queries to get the required URLs for the API. Completed the **get_params()** function. Spent more time coming up with the logic than writing the functions in the trial_service.py script. AI helped extract values from the trial json data.
 - Used the **relevant_trials()** function to get the relevant trials, **trials_long()** function to get detailed trial information. 
 - Began working on the **main.py** backend code at this point. Wrote API endpoints to extract **patient data**, get **trials related** to the patient and get **trial details** given the NCT ID as a starting point.
 - Proceeded with the **BONUS** requirements. Wrote API endpoints to **save selected trails**, **delete saved trails**, **list saved trails**. 
@@ -105,6 +105,7 @@ npm run dev
 - I assumed the 'interventions' parameter wouldn't be needed to filter the trials. But using it gave better results.
 - Since it's my first time using the trials API, I assumed it would only return trials if there was a strong match. But that was not the case.
 - An object storage service (AWS S3) was easier to implement and cheaper. Even though a database would have been much better in terms of performance and security.
+- I am assuming the transcriptions have a specific format
 - I had trouble coming up with the right project structure (especially for the frontend). Turns out not using subfolders was the right option. 
 
   
