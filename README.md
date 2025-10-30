@@ -60,8 +60,8 @@ source venv/bin/activate # activate virtual environment
 pip install -r requirements.txt # install dependencies
 python -m src.main # run the backend api
 ```
-- http://localhost:8000 - Backend API
-- http://localhost:8000/docs - Backend API Documentation
+- http://localhost:8007 - Backend API
+- http://localhost:8007/docs - Backend API Documentation
 
 #### Frontend: 
 ```bash
