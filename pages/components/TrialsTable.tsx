@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrialData, TrialDetails, TrialRanking, getTrialDetails, getTrialRanking, askAI, saveTrial, removeSavedTrial, getSavedTrials } from '../lib/api-service';
+import { TrialData, TrialDetails, TrialRanking, getTrialDetails, getTrialRanking, askAI, saveTrial, removeSavedTrial, getSavedTrials } from '../../lib/api-service';
 
 interface TrialsTableProps {
   trials: TrialData[];
