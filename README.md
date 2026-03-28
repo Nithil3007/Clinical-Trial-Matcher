@@ -44,7 +44,7 @@ Use patient-clinician transcriptions to get relevant clinical trials
 - Extracted the conditions and treatment parameters from the transcript. The clinical trial API uses a semantic search method to retrieve the relevant trials. I had to figure out a way to extract the trials with the most relevance. Used AND and OR operators with **condition** and **intervention** queries to get the required URLs for the API. Completed the **get_params()** function. Spent more time coming up with the logic than writing the functions in the trial_service.py script. AI helped extract values from the trial json data.
 - Used the **relevant_trials()** function to get the relevant trials, **trials_long()** function to get detailed trial information. 
 - Began working on the **main.py** backend code at this point. Wrote API endpoints to extract **patient data**, get **trials related** to the patient and get **trial details** given the NCT ID as a starting point.
-- Proceeded with the **BONUS** requirements. Wrote API endpoints to **save selected trails**, **delete saved trails**, **list saved trails**. 
+- Wrote API endpoints to **save selected trails**, **delete saved trails**, **list saved trails**. 
 - Moved on to the AI features. Wrote a **ai_rank()** function to enable AI rank, explain relevance and sort the trials based on the patient data. Then wrote the **ask_ai()** function - a chat interface that takes the trial details and patient data as context to respond. 
 ### Frontend
 - Used AI to write most of the frontend code. Made the web app UI simple and easy to navigate. Crafted the prompts to get deterministic responses from the AI and responsive code.
